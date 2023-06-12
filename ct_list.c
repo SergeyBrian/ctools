@@ -62,8 +62,10 @@ void ct_list_insert(List *list, void *value, uint pos) {
 
     list->size++;
     ct_list_resize(list);
-    memmove(&list->nodes[pos + 1], &list->nodes[pos],
-            list->type_size * (list->size - pos));
+    char *src_pos = (char *)list->nodes + pos * list->type_size;
+    char *dest_pos = src_pos + list->type_size;
+    memmove(dest_pos, src_pos, list->type_size * (list->size - pos));
+
     char *dest = (char *)list->nodes;
     dest += pos * list->type_size;
     memcpy(dest, value, list->type_size);
