@@ -48,6 +48,7 @@ extern void ct_list_destroy(List *list);
 extern void ct_list_destroy_ex(List *list, void (* node_destructor) (void *val), uint keep_nodes);
 extern void ct_list_append(List *list, void *value);
 extern void ct_list_insert(List *list, void *value, uint pos);
+extern void *ct_list_alloc_pos(List *list, uint pos);
 extern void *ct_list_get(List *list, uint pos);
 extern void ct_list_replace(List *list, uint pos, void *value);
 extern void ct_list_remove_first(List *list);

@@ -51,6 +51,7 @@ void ct_list_append(List *list, void *value) {
     ct_list_resize(list);
     char *dest = (char *)list->nodes;
     dest += (list->size - 1) * list->type_size;
+    if (!value) return;
     memcpy(dest, value, list->type_size);
 }
 
@@ -66,6 +67,7 @@ void ct_list_insert(List *list, void *value, uint pos) {
     char *dest_pos = src_pos + list->type_size;
     memmove(dest_pos, src_pos, list->type_size * (list->size - pos));
 
+    if (!value) return;
     char *dest = (char *)list->nodes;
     dest += pos * list->type_size;
     memcpy(dest, value, list->type_size);
@@ -288,4 +290,9 @@ void *ct_list_min(List *list, uint (* less) (void *a, void *b), void *max_possib
     }
 
     return min_node;
+}
+
+void *ct_list_alloc_pos(List *list, uint pos) {
+    ct_list_insert(list, NULL, pos);
+    return ct_list_get(list, pos);
 }
