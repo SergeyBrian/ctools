@@ -1,8 +1,9 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define NO_MEMORY_DEBUG
+
 #include "ctools.h"
 
 #define MAX_FILE_NAME_LEN 256
@@ -36,14 +37,17 @@ void ct_debug_mem_add_alloc(void *ptr, uint size, char *file, uint line) {
     MemAllocLine *alloc_line = ct_alloc_lines;
 
     ct_total_alloc_size += size;
+    uint should_replace = TRUE;
 
     for (; i < alloc_lines_count; i++) {
         alloc_line = &ct_alloc_lines[i];
         if (alloc_line->line == line && !strcmp(alloc_line->file, file)) {
+            should_replace = FALSE;
             break;
         }
     }
-    alloc_lines_count = i+1;
+    alloc_line += (alloc_lines_count > 0 && should_replace);
+    alloc_lines_count++;
 
     if (alloc_line->alloc_count == 0) {
         alloc_line->alloc_capacity = DEF_ALLOC_CAPACITY;
@@ -113,8 +117,19 @@ void *ct_debug_mem_realloc(void *ptr, uint size, char *file, uint line) {
 }
 
 void ct_debug_mem_free(void *ptr, char *file, uint line) {
-    Allocation *allocation = ct_debug_mem_get_alloc(ptr);
-    if (allocation->is_freed) {
+    Allocation *allocation = NULL;
+    for (uint i = 0; i < alloc_lines_count; i++) {
+        MemAllocLine *line = &ct_alloc_lines[i];
+        for (uint j = 0; j < line->alloc_count; j++) {
+            if (line->allocs[j].ptr != ptr) continue;
+            if (line->allocs[j].is_freed) continue;
+
+            allocation = &line->allocs[j];
+            break;
+        }
+    }
+
+    if (!allocation) {
         printf("ERROR: double free at file %s line %d\n", file, line);
         exit(1);
     }
@@ -132,8 +147,8 @@ void ct_debug_mem_print(uint min_alloc) {
         printf("File: %s Line: %d\n", line->file, line->line);
         for (uint j = 0; j < line->alloc_count; j++) {
             Allocation *allocation = &line->allocs[j];
-            printf("\tAllocated %lu bytes at %p %s %s\n", allocation->size, allocation->ptr,
-                   allocation->comment,
+            printf("\tAllocated %lu bytes at %p %s %s\n", allocation->size,
+                   allocation->ptr, allocation->comment,
                    (allocation->is_freed ? "[FREE]" : ""));
         }
     }
